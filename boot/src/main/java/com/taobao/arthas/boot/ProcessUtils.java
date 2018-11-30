@@ -96,9 +96,9 @@ public class ProcessUtils {
 
         String[] command = null;
         if (v) {
-            command = new String[] { jps, "-v" };
+            command = new String[] { jps, "-lv" };
         } else {
-            command = new String[] { jps };
+            command = new String[] { jps, "-l" };
         }
 
         List<String> lines = ExecutingCommand.runNative(command);
