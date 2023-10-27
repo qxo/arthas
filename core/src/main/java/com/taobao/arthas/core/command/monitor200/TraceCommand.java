@@ -31,6 +31,8 @@ import java.util.List;
 @Summary("Trace the execution time of specified method invocation.")
 @Description(value = Constants.EXPRESS_DESCRIPTION + Constants.EXAMPLE +
         "  trace org.apache.commons.lang.StringUtils isBlank\n" +
+        "  trace org.apache.commons.lang.StringUtils.isBlank ~\n" +
+        "  trace org.apache.commons.lang.StringUtils:isBlank ~\n" +
         "  trace *StringUtils isBlank\n" +
         "  trace *StringUtils isBlank params[0].length==1\n" +
         "  trace *StringUtils isBlank '#cost>100'\n" +
@@ -42,10 +44,8 @@ import java.util.List;
         "  trace OuterClass$InnerClass *\n" +
         Constants.WIKI + Constants.WIKI_HOME + "trace")
 //@formatter:on
-public class TraceCommand extends EnhancerCommand {
+public class TraceCommand extends AbstractMethodBasedCommand {
 
-    private String classPattern;
-    private String methodPattern;
     private String conditionExpress;
     private boolean isRegEx = false;
     private int numberOfLimit = 100;
@@ -147,7 +147,8 @@ public class TraceCommand extends EnhancerCommand {
     protected Matcher getMethodNameMatcher() {
         if (methodNameMatcher == null) {
             if (pathPatterns == null || pathPatterns.isEmpty()) {
-                methodNameMatcher = SearchUtils.classNameMatcher(getMethodPattern(), isRegEx());
+                String methodPattern1 = getMethodPattern();
+                methodNameMatcher = SearchUtils.classNameMatcher(methodPattern1, isRegEx());
             } else {
                 methodNameMatcher = getPathTracingMethodMatcher();
             }
