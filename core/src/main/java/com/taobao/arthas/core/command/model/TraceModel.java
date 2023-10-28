@@ -8,6 +8,8 @@ public class TraceModel extends ResultModel {
     private TraceNode root;
     private int nodeCount;
 
+    private MethodNode maxCostNode;
+
     public TraceModel() {
     }
 
@@ -35,5 +37,13 @@ public class TraceModel extends ResultModel {
 
     public void setNodeCount(int nodeCount) {
         this.nodeCount = nodeCount;
+    }
+
+    public MethodNode getMaxCostNode (){
+        return maxCostNode;
+    }
+ 
+    public void setMaxCostNode(final MethodNode node) {
+        maxCostNode = node;
     }
 }

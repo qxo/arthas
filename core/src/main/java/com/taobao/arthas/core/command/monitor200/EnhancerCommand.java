@@ -162,6 +162,7 @@ public abstract class EnhancerCommand extends AnnotatedCommand {
                 process.end(-1, msg);
                 return;
             }
+            initOnAdviceListener(process, listener);
             boolean skipJDKTrace = false;
             if(listener instanceof AbstractTraceAdviceListener) {
                 skipJDKTrace = ((AbstractTraceAdviceListener) listener).getCommand().isSkipJDKTrace();
@@ -227,6 +228,10 @@ public abstract class EnhancerCommand extends AnnotatedCommand {
                 process.session().unLock();
             }
         }
+    }
+
+    protected void initOnAdviceListener(final CommandProcess process, final AdviceListener listener) {
+
     }
 
     protected void completeArgument3(Completion completion) {

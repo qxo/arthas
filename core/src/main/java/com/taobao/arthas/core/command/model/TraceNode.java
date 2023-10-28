@@ -76,4 +76,37 @@ public abstract class TraceNode {
     public List<TraceNode> getChildren() {
         return children;
     }
+
+    private MethodNode maxCostNode;
+
+    public MethodNode getMaxCostNode (){
+        return maxCostNode;
+    }
+ 
+    public void setMaxCostNode(final MethodNode node) {
+        this.maxCostNode = node;
+        if (this.parent != null && this.parent != this) {
+            this.setChildMaxCostNode(maxCostNode);
+        }
+    }
+
+    private MethodNode childMaxCostNode;
+    public MethodNode getChildMaxCostNode() {
+        return childMaxCostNode;
+    }
+    public void setChildMaxCostNode(final MethodNode node) {
+        if (node == null) {
+            return;
+        }
+        if (this.childMaxCostNode == null || childMaxCostNode.isCostNode(node)) {
+            this.childMaxCostNode = node;
+        }
+        if (this.parent != null && this.parent != this) {
+            this.parent.setChildMaxCostNode(node);
+        }
+    }
+
+    public boolean isChildMaxCostNode(final MethodNode node) {
+        return node != null && node.equals(childMaxCostNode);
+    }
 }

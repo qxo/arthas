@@ -5,6 +5,8 @@ import com.alibaba.arthas.deps.org.slf4j.LoggerFactory;
 import com.taobao.arthas.core.advisor.Advice;
 import com.taobao.arthas.core.advisor.AdviceListenerAdapter;
 import com.taobao.arthas.core.advisor.ArthasMethod;
+import com.taobao.arthas.core.command.model.MethodNode;
+import com.taobao.arthas.core.command.model.TraceModel;
 import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.util.LogUtil;
 import com.taobao.arthas.core.util.ThreadLocalWatch;
@@ -17,6 +19,8 @@ public class AbstractTraceAdviceListener extends AdviceListenerAdapter {
     protected final ThreadLocalWatch threadLocalWatch = new ThreadLocalWatch();
     protected TraceCommand command;
     protected CommandProcess process;
+
+    private transient MethodNode maxCostNode;
 
     protected final ThreadLocal<TraceEntity> threadBoundEntity = new ThreadLocal<TraceEntity>();
 
@@ -95,8 +99,16 @@ public class AbstractTraceAdviceListener extends AdviceListenerAdapter {
                     // 满足输出条件
                     process.times().incrementAndGet();
                     // TODO: concurrency issues for process.write
-                    process.appendResult(traceEntity.getModel());
-
+                    final TraceModel model = traceEntity.getModel();
+                    process.appendResult(model);
+                    maxCostNode = model.getMaxCostNode();
+                    if(maxCostNode!= null) {
+                        MethodNode md = maxCostNode.getChildMaxCostNode();
+                        if (this.isVerbose()) {
+                            process.echoTips("maxCostNode: " + maxCostNode.getClassName() + " " + maxCostNode.getMethodName() 
+                            + " child: " + (md == null ? null : md.getClassName() + " " + md.getMethodName()) + "\n");
+                        }
+                    }
                     // 是否到达数量限制
                     if (isLimitExceeded(command.getNumberOfLimit(), process.times().get())) {
                         // TODO: concurrency issue to abort process
@@ -111,5 +123,9 @@ public class AbstractTraceAdviceListener extends AdviceListenerAdapter {
                 threadBoundEntity.remove();
             }
         }
+    }
+
+    public MethodNode getMaxCostNode (){
+        return maxCostNode;
     }
 }

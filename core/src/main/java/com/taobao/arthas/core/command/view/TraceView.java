@@ -32,25 +32,25 @@ public class TraceView extends ResultView<TraceModel> {
 
     @Override
     public void draw(CommandProcess process, TraceModel result) {
-        process.write(drawTree(result.getRoot())).write("\n");
+        process.write(drawTree(result.getRoot())).write("\n");  
+        result.setMaxCostNode(maxCostNode);
     }
 
     public String drawTree(TraceNode root) {
 
-        //reset status
-        maxCostNode = null;
-        findMaxCostNode(root);
+        maxCostNode = findMaxCostNode(root, null);
 
         final StringBuilder treeSB = new StringBuilder(2048);
 
         final Ansi highlighted = Ansi.ansi().fg(Ansi.Color.RED);
+        final Ansi highlightedChild = Ansi.ansi().fg(Ansi.Color.YELLOW);
 
         recursive(0, true, "", root, new Callback() {
 
             @Override
             public void callback(int deep, boolean isLast, String prefix, TraceNode node) {
                 treeSB.append(prefix).append(isLast ? STEP_FIRST_CHAR : STEP_NORMAL_CHAR);
-                renderNode(treeSB, node, highlighted);
+                renderNode(treeSB, node, highlighted, highlightedChild);
                 if (!StringUtils.isBlank(node.getMark())) {
                     treeSB.append(" [").append(node.getMark()).append(node.marks() > 1 ? "," + node.marks() : "").append("]");
                 }
@@ -62,15 +62,16 @@ public class TraceView extends ResultView<TraceModel> {
         return treeSB.toString();
     }
 
-    private void renderNode(StringBuilder sb, TraceNode node, Ansi highlighted) {
+    private void renderNode(StringBuilder sb, TraceNode node, Ansi highlighted, final Ansi highlightedChild) {
         //render cost: [0.366865ms]
         if (isPrintCost && node instanceof MethodNode) {
-            MethodNode methodNode = (MethodNode) node;
-
-            String costStr = renderCost(methodNode);
+            final MethodNode methodNode = (MethodNode) node;
+            final String costStr = renderCost(methodNode);
             if (node == maxCostNode) {
                 // the node with max cost will be highlighted
                 sb.append(highlighted.a(costStr).reset().toString());
+            } else if (maxCostNode != null && maxCostNode.isChildMaxCostNode(methodNode)) {
+                sb.append(highlightedChild.a(costStr).reset().toString());
             } else {
                 sb.append(costStr);
             }
@@ -174,21 +175,27 @@ public class TraceView extends ResultView<TraceModel> {
      * 查找耗时最大的节点，便于后续高亮展示
      * @param node
      */
-    private void findMaxCostNode(TraceNode node) {
+    private MethodNode findMaxCostNode(TraceNode node, MethodNode maxCostNode) {
         if (node instanceof MethodNode && !isRoot(node) && !isRoot(node.parent())) {
             MethodNode aNode = (MethodNode) node;
-            if (maxCostNode == null || maxCostNode.getTotalCost() < aNode.getTotalCost()) {
+            if (aNode.isCostNode(maxCostNode)) {
                 maxCostNode = aNode;
             }
         }
         if (!isLeaf(node)) {
-            List<TraceNode> children = node.getChildren();
+            final List<TraceNode> children = node.getChildren();
             if (children != null) {
+                MethodNode costNode = null;
                 for (TraceNode n: children) {
-                    findMaxCostNode(n);
+                   costNode = findMaxCostNode(n, costNode);
+                }
+                node.setMaxCostNode(costNode);
+                if (costNode != null && costNode.isCostNode(maxCostNode)) {
+                    maxCostNode = costNode;
                 }
             }
         }
+        return maxCostNode;
     }
 
     private boolean isRoot(TraceNode node) {

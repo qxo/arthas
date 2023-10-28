@@ -1,8 +1,12 @@
 package com.taobao.arthas.core.command.monitor200;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.taobao.arthas.core.GlobalOptions;
 import com.taobao.arthas.core.advisor.AdviceListener;
 import com.taobao.arthas.core.command.Constants;
+import com.taobao.arthas.core.command.model.MethodNode;
 import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.util.SearchUtils;
 import com.taobao.arthas.core.util.matcher.GroupMatcher;
@@ -16,9 +20,6 @@ import com.taobao.middleware.cli.annotations.Description;
 import com.taobao.middleware.cli.annotations.Name;
 import com.taobao.middleware.cli.annotations.Option;
 import com.taobao.middleware.cli.annotations.Summary;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 调用跟踪命令<br/>
@@ -187,5 +188,21 @@ public class TraceCommand extends AbstractMethodBasedCommand {
 
     private Matcher<String> getPathTracingMethodMatcher() {
         return new TrueMatcher<String>();
+    }
+
+    @Override
+    protected void initOnAdviceListener(final CommandProcess process, final AdviceListener listener) {
+        if (this.listenerId != 0 && isSpecialPattern(classPattern)) {
+            if (listener instanceof AbstractTraceAdviceListener) {
+                final MethodNode node = ((AbstractTraceAdviceListener)listener).getMaxCostNode();
+                if (node != null) {
+                    final MethodNode mNode = node.getChildMaxCostNode() == null ? node :  node.getChildMaxCostNode();
+                    classPattern = mNode.getClassName();
+                    methodPattern = mNode.getMethodName();
+                    process.echoTips("found maxCostNode: " +  classPattern + " " + methodPattern + "\n");
+                }
+            }
+        } 
+        super.initOnAdviceListener(process, listener);
     }
 }
