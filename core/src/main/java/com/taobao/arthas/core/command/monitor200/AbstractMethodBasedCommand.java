@@ -3,6 +3,7 @@ package com.taobao.arthas.core.command.monitor200;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.taobao.arthas.core.advisor.AdviceListener;
 import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.middleware.cli.annotations.Argument;
 import com.taobao.middleware.cli.annotations.Description;
@@ -30,7 +31,12 @@ public abstract class AbstractMethodBasedCommand extends EnhancerCommand {
 
     @Override
     protected void enhance(final CommandProcess process) {
-        if ("=".equals(methodPattern) || "~".equals(methodPattern) || ".".equals(methodPattern)) { //smart way
+        super.enhance(process);
+    }
+
+    @Override
+    protected void initOnAdviceListener(final CommandProcess process, final AdviceListener listener) {
+        if (isSpecialPattern(methodPattern)) { //smart way
           final Pattern smartPattern = Pattern.compile("([.][A-Z][^.]*)([.: ]+)([a-z][^. ]*)$");
           final Matcher matcher = smartPattern.matcher(classPattern);
           if (matcher.find()) {
@@ -39,6 +45,9 @@ public abstract class AbstractMethodBasedCommand extends EnhancerCommand {
               process.echoTips("smart way input ==> " + classPattern + " " + methodPattern + "\n");
           }
         }
-        super.enhance(process);
+    }
+
+    protected boolean isSpecialPattern(final String pattern) {
+        return "=".equals(pattern) || "~".equals(pattern) || ".".equals(pattern);
     }
 }

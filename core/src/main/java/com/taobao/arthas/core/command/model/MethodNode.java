@@ -145,4 +145,8 @@ public class MethodNode extends TraceNode {
     public void setInvoking(boolean invoking) {
         isInvoking = invoking;
     }
+
+    public boolean isCostNode(final MethodNode maxCostNode) {
+        return maxCostNode == null || maxCostNode.getTotalCost() < this.getTotalCost();
+    }
 }
