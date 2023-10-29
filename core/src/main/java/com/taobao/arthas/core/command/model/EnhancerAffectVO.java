@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Class enhance affect vo
  * @author gongdewei 2020/6/22
  */
 public class EnhancerAffectVO {
@@ -19,6 +20,7 @@ public class EnhancerAffectVO {
     private Throwable throwable;
     private List<String> classDumpFiles;
     private List<String> methods;
+    private String overLimitMsg;
 
     public EnhancerAffectVO(EnhancerAffect affect) {
         this.cost = affect.cost();
@@ -26,6 +28,7 @@ public class EnhancerAffectVO {
         this.methodCount = affect.mCnt();
         this.listenerId = affect.getListenerId();
         this.throwable = affect.getThrowable();
+        this.overLimitMsg = affect.getOverLimitMsg();
 
         if (GlobalOptions.isDump) {
             classDumpFiles = new ArrayList<String>();
@@ -85,5 +88,13 @@ public class EnhancerAffectVO {
 
     public void setMethods(List<String> methods) {
         this.methods = methods;
+    }
+
+    public void setOverLimitMsg(String overLimitMsg) {
+        this.overLimitMsg = overLimitMsg;
+    }
+
+    public String getOverLimitMsg() {
+        return overLimitMsg;
     }
 }

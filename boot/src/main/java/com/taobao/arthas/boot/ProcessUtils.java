@@ -65,7 +65,7 @@ public class ProcessUtils {
         }
 
         if (processMap.isEmpty()) {
-            AnsiLog.info("Can not find java process. Try to pass <pid> in command line.");
+            AnsiLog.info("Can not find java process. Try to run `jps` command lists the instrumented Java HotSpot VMs on the target system.");
             return -1;
         }
 
@@ -129,7 +129,7 @@ public class ProcessUtils {
             jps = jpsFile.getAbsolutePath();
         }
 
-        AnsiLog.debug("Try use jps to lis java process, jps: " + jps);
+        AnsiLog.debug("Try use jps to list java process, jps: " + jps);
 
         String[] command = null;
         if (v) {
@@ -233,13 +233,13 @@ public class ProcessUtils {
         String javaHome = findJavaHome();
 
         // find java/java.exe
-        File javaPath = findJava();
+        File javaPath = findJava(javaHome);
         if (javaPath == null) {
             throw new IllegalArgumentException(
                             "Can not find java/java.exe executable file under java home: " + javaHome);
         }
 
-        File toolsJar = findToolsJar();
+        File toolsJar = findToolsJar(javaHome);
 
         if (JavaVersionUtils.isLessThanJava9()) {
             if (toolsJar == null || !toolsJar.exists()) {
@@ -266,6 +266,8 @@ public class ProcessUtils {
         // -agent "${arthas_lib_dir}/arthas-agent.jar"
 
         ProcessBuilder pb = new ProcessBuilder(command);
+        // https://github.com/alibaba/arthas/issues/2166
+        pb.environment().put("JAVA_TOOL_OPTIONS", "");
         try {
             final Process proc = pb.start();
             Thread redirectStdout = new Thread(new Runnable() {
@@ -313,8 +315,8 @@ public class ProcessUtils {
         // find arthas-client.jar
         URLClassLoader classLoader = new URLClassLoader(
                 new URL[]{new File(arthasHomeDir, "arthas-client.jar").toURI().toURL()});
-        Class<?> telnetConsoleClas = classLoader.loadClass("com.taobao.arthas.client.TelnetConsole");
-        Method processMethod = telnetConsoleClas.getMethod("process", String[].class);
+        Class<?> telnetConsoleClass = classLoader.loadClass("com.taobao.arthas.client.TelnetConsole");
+        Method processMethod = telnetConsoleClass.getMethod("process", String[].class);
 
         //redirect System.out/System.err
         PrintStream originSysOut = System.out;
@@ -354,8 +356,7 @@ public class ProcessUtils {
         }
     }
 
-    private static File findJava() {
-        String javaHome = findJavaHome();
+    private static File findJava(String javaHome) {
         String[] paths = { "bin/java", "bin/java.exe", "../bin/java", "../bin/java.exe" };
 
         List<File> javaList = new ArrayList<File>();
@@ -389,12 +390,11 @@ public class ProcessUtils {
         return javaList.get(0);
     }
 
-    private static File findToolsJar() {
+    private static File findToolsJar(String javaHome) {
         if (JavaVersionUtils.isGreaterThanJava8()) {
             return null;
         }
 
-        String javaHome = findJavaHome();
         File toolsJar = new File(javaHome, "lib/tools.jar");
         if (!toolsJar.exists()) {
             toolsJar = new File(javaHome, "../lib/tools.jar");

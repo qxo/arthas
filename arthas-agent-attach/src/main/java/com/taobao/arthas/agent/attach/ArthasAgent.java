@@ -32,12 +32,23 @@ public class ArthasAgent {
     private Instrumentation instrumentation;
 
     public ArthasAgent() {
+        this(null, null, false, null);
+    }
 
+    public ArthasAgent(Map<String, String> configMap) {
+        this(configMap, null, false, null);
+    }
+
+    public ArthasAgent(String arthasHome) {
+        this(null, arthasHome, false, null);
     }
 
     public ArthasAgent(Map<String, String> configMap, String arthasHome, boolean slientInit,
             Instrumentation instrumentation) {
-        this.configMap = configMap;
+        if (configMap != null) {
+            this.configMap = configMap;
+        }
+
         this.arthasHome = arthasHome;
         this.slientInit = slientInit;
         this.instrumentation = instrumentation;
@@ -45,6 +56,22 @@ public class ArthasAgent {
 
     public static void attach() {
         new ArthasAgent().init();
+    }
+
+    /**
+     * @see https://arthas.aliyun.com/doc/arthas-properties.html
+     * @param configMap
+     */
+    public static void attach(Map<String, String> configMap) {
+        new ArthasAgent(configMap).init();
+    }
+
+    /**
+     * use the specified arthas
+     * @param arthasHome arthas directory
+     */
+    public static void attach(String arthasHome) {
+        new ArthasAgent(arthasHome).init();
     }
 
     public void init() throws IllegalStateException {
