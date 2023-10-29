@@ -46,7 +46,7 @@
                                     <mainClass>com.taobao.arthas.core.Arthas</mainClass>
                                     <manifestEntries>
                                         <Created-By>core engine team, middleware group, alibaba inc.</Created-By>
-                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                        <Implementation-Version>${project.version} ${git.commit.id.abbrev}</Implementation-Version>
                                         <Implementation-Vendor-Id>com.taobao.arthas</Implementation-Vendor-Id>
                                         <Specification-Version>${project.version}</Specification-Version>
                                         <Specification-Title>arthas-core</Specification-Title>
