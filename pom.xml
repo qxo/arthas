@@ -268,6 +268,28 @@
                         </executions>
                         <configuration>
                             <verbose>false</verbose>
+                            <replacementProperties>
+                                <replacementProperty>
+                                    <!-- input -->
+                                    <property>git.dirty</property>
+                                    <propertyOutputSuffix>flag</propertyOutputSuffix>
+                                    <token>false</token>
+                                    <value></value>
+                                    <regex>false</regex>
+                                    <transformationRules>
+                                    </transformationRules>
+                                </replacementProperty>
+                                <replacementProperty>
+                                    <!-- input -->
+                                    <property>git.dirty</property>
+                                    <propertyOutputSuffix>flag</propertyOutputSuffix>
+                                    <token>true</token>
+                                    <value>-dirty</value>
+                                    <regex>false</regex>
+                                    <transformationRules>
+                                    </transformationRules>
+                                </replacementProperty>
+                            </replacementProperties>
                             <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
                             <generateGitPropertiesFile>true</generateGitPropertiesFile>
                             <generateGitPropertiesFilename>${project.build.outputDirectory}/arthas-git.properties</generateGitPropertiesFilename>
