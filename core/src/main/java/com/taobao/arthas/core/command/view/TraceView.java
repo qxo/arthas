@@ -11,6 +11,7 @@ import com.taobao.arthas.core.util.StringUtils;
 import com.taobao.arthas.core.view.Ansi;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 
@@ -30,13 +31,51 @@ public class TraceView extends ResultView<TraceModel> {
     private boolean isPrintCost = true;
     private MethodNode maxCostNode;
 
+    public static interface DisplayFilter {
+        public boolean notShow(TraceNode node);
+    }
     @Override
     public void draw(CommandProcess process, TraceModel result) {
-        process.write(drawTree(result.getRoot())).write("\n");  
+        final String resultFilter = result.getResultFilter();
+        DisplayFilter filter = null;
+        if (resultFilter != null) {
+          if (Pattern.compile("[0-9.]+").matcher(resultFilter).matches()) {
+            process.echoTips("displayFilter: hide <= " + resultFilter + " ms\n");
+            final double minCost = Double.valueOf(resultFilter) * 1000000;
+            filter = new DisplayFilter() {
+              public boolean notShow(TraceNode node) {
+                if (!(node instanceof MethodNode)) {
+                    return false;
+                }
+                final MethodNode mNode = (MethodNode)node;
+                return mNode.getCost() < minCost;
+              }
+            };
+          } else {
+            process.echoTips("displayFilter: hide <= " + resultFilter + " by regex find.\n");
+            final Pattern hideFilter = Pattern.compile(resultFilter);
+             filter = new DisplayFilter() {
+               public boolean notShow(TraceNode node) {
+                 if (!(node instanceof MethodNode)) {
+                     return false;
+                 }
+                 final MethodNode mNode = (MethodNode)node;
+                 return hideFilter.matcher(mNode.getClassName()).find() 
+                   || hideFilter.matcher(mNode.getMethodName()).find();
+               }
+             };
+          }
+        }
+        hideCount = 0;
+        process.write(drawTree(result.getRoot(), filter)).write("\n");  
         result.setMaxCostNode(maxCostNode);
+        if (resultFilter != null) {
+            process.echoTips("hideCount: " + hideCount + " resultFilter:" + resultFilter + "\n");
+        }
     }
 
-    public String drawTree(TraceNode root) {
+    private int hideCount = 0;
+    public String drawTree(TraceNode root, final DisplayFilter filter) {
 
         maxCostNode = findMaxCostNode(root, null);
 
@@ -49,6 +88,10 @@ public class TraceView extends ResultView<TraceModel> {
 
             @Override
             public void callback(int deep, boolean isLast, String prefix, TraceNode node) {
+                if (filter != null && filter.notShow(node)) {
+                    hideCount ++;
+                    return;
+                }
                 treeSB.append(prefix).append(isLast ? STEP_FIRST_CHAR : STEP_NORMAL_CHAR);
                 renderNode(treeSB, node, highlighted, highlightedChild);
                 if (!StringUtils.isBlank(node.getMark())) {

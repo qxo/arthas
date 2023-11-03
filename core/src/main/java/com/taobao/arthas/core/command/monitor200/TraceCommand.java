@@ -1,14 +1,5 @@
 package com.taobao.arthas.core.command.monitor200;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
-
 import com.taobao.arthas.core.GlobalOptions;
 import com.taobao.arthas.core.advisor.AdviceListener;
 import com.taobao.arthas.core.command.Constants;
@@ -28,6 +19,15 @@ import com.taobao.middleware.cli.annotations.Description;
 import com.taobao.middleware.cli.annotations.Name;
 import com.taobao.middleware.cli.annotations.Option;
 import com.taobao.middleware.cli.annotations.Summary;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * 调用跟踪命令<br/>
@@ -60,6 +60,8 @@ public class TraceCommand extends AbstractMethodBasedCommand {
     private int numberOfLimit = 100;
     private List<String> pathPatterns;
     private boolean skipJDKTrace;
+
+    private String resultFilter;
 
     @Argument(argName = "class-pattern", index = 0)
     @Description("Class name pattern, use either '.' or '/' as separator")
@@ -214,7 +216,7 @@ public class TraceCommand extends AbstractMethodBasedCommand {
             }
         }  else {
             if (classPattern.startsWith("@")){
-                    File stackFile = new File(classPattern.substring(1));
+                    final File stackFile = new File(classPattern.substring(1));
                     try {
                         process.echoTips("stackFile: " + stackFile + "\n");
                         final String txt = FileUtils.readFileToString(stackFile, Charset.defaultCharset());
@@ -267,4 +269,35 @@ public class TraceCommand extends AbstractMethodBasedCommand {
         }
         super.initOnAdviceListener(process, listener);
     }
+
+    /**
+     * @return boolean return the isRegEx
+     */
+    public boolean isIsRegEx() {
+        return isRegEx;
+    }
+
+    /**
+     * @param isRegEx the isRegEx to set
+     */
+    public void setIsRegEx(boolean isRegEx) {
+        this.isRegEx = isRegEx;
+    }
+
+    /**
+     * @return String return the resultFilter
+     */
+    public String getResultFilter() {
+        return resultFilter;
+    }
+
+    /**
+     * @param resultFilter the resultFilter to set
+     */
+    @Option(shortName = "r", longName = "resultFilter")
+    @Description("Result node filter, number(cost) or regexp （class/method). ie: 0.1 = cost > 0.1 ms will be hide")
+    public void setResultFilter(String resultFilter) {
+        this.resultFilter = resultFilter;
+    }
+
 }
