@@ -100,6 +100,7 @@ public class AbstractTraceAdviceListener extends AdviceListenerAdapter {
                     process.times().incrementAndGet();
                     // TODO: concurrency issues for process.write
                     final TraceModel model = traceEntity.getModel();
+                    model.setResultFilter(command.getResultFilter());
                     process.appendResult(model);
                     maxCostNode = model.getMaxCostNode();
                     if(maxCostNode!= null) {

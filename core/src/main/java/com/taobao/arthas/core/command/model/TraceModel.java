@@ -10,6 +10,8 @@ public class TraceModel extends ResultModel {
 
     private MethodNode maxCostNode;
 
+    private String resultFilter;
+
     public TraceModel() {
     }
 
@@ -46,4 +48,19 @@ public class TraceModel extends ResultModel {
     public void setMaxCostNode(final MethodNode node) {
         maxCostNode = node;
     }
+
+    /**
+     * @return String return the displayFilter
+     */
+    public String getResultFilter() {
+        return resultFilter;
+    }
+
+    /**
+     * @param displayFilter the displayFilter to set
+     */
+    public void setResultFilter(String displayFilter) {
+        this.resultFilter = displayFilter;
+    }
+
 }
