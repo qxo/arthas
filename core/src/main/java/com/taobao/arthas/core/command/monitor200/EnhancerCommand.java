@@ -49,7 +49,7 @@ public abstract class EnhancerCommand extends AnnotatedCommand {
 
     protected int maxNumOfMatchedClass;
 
-    @Option(longName = "exclude-class-pattern")
+    @Option(shortName="e", longName = "exclude-class-pattern")
     @Description("exclude class name pattern, use either '.' or '/' as separator")
     public void setExcludeClassPattern(String excludeClassPattern) {
         this.excludeClassPattern = excludeClassPattern;
