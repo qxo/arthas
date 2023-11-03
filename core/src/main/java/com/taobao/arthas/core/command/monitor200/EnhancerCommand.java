@@ -55,7 +55,7 @@ public abstract class EnhancerCommand extends AnnotatedCommand {
         this.excludeClassPattern = excludeClassPattern;
     }
 
-    @Option(longName = "listenerId")
+    @Option(shortName = "l", longName = "listenerId")
     @Description("The special listenerId")
     public void setListenerId(long listenerId) {
         this.listenerId = listenerId;
