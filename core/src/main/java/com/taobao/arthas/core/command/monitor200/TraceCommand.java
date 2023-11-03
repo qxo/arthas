@@ -1,15 +1,23 @@
 package com.taobao.arthas.core.command.monitor200;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import com.taobao.arthas.core.GlobalOptions;
 import com.taobao.arthas.core.advisor.AdviceListener;
 import com.taobao.arthas.core.command.Constants;
 import com.taobao.arthas.core.command.model.MethodNode;
 import com.taobao.arthas.core.shell.command.CommandProcess;
+import com.taobao.arthas.core.util.FileUtils;
 import com.taobao.arthas.core.util.SearchUtils;
 import com.taobao.arthas.core.util.matcher.GroupMatcher;
+import com.taobao.arthas.core.util.matcher.ListMatcher;
 import com.taobao.arthas.core.util.matcher.Matcher;
 import com.taobao.arthas.core.util.matcher.RegexMatcher;
 import com.taobao.arthas.core.util.matcher.TrueMatcher;
@@ -128,7 +136,8 @@ public class TraceCommand extends AbstractMethodBasedCommand {
     protected Matcher getClassNameMatcher() {
         if (classNameMatcher == null) {
             if (pathPatterns == null || pathPatterns.isEmpty()) {
-                classNameMatcher = SearchUtils.classNameMatcher(getClassPattern(), isRegEx());
+                final String classPattern1 = getClassPattern();
+                classNameMatcher = SearchUtils.classNameMatcher(classPattern1, isRegEx());                
             } else {
                 classNameMatcher = getPathTracingClassMatcher();
             }
@@ -202,7 +211,59 @@ public class TraceCommand extends AbstractMethodBasedCommand {
                     process.echoTips("found maxCostNode: " +  classPattern + " " + methodPattern + "\n");
                 }
             }
-        } 
+        }  else {
+            if (classPattern.startsWith("@")){
+                    File stackFile = new File(classPattern.substring(1));
+                    try {
+                        process.echoTips("stackFile: " + stackFile + "\n");
+                        final String txt = FileUtils.readFileToString(stackFile, Charset.defaultCharset());
+                        final Pattern pattern = Pattern.compile("(?m)^\\s+at\\s([^(]+)[.]([^(]+)\\(");
+                        java.util.regex.Matcher matcher = pattern.matcher(txt);
+                        final Set<String> classList = new HashSet<String>();
+                        final Set<String> methodList = new HashSet<String>();
+                        final Matcher excludeMatcher = getClassNameExcludeMatcher();
+                        final Pattern excluePattern;
+                        if (excludeMatcher == null) {
+                            final String ex = "(^((org.springframework.(cglib|aop|web.filter.OncePerRequestFilter))|javax|org.apache|java.lang|jdk)[.])"
+                                + "|EnhancerBySpringCGLIB|FastClassBySpringCGLIB|VirtualFilterChain|FilterChainProxy|DelegatingFilterProxy|CglibAopProxy";
+                            excluePattern = Pattern.compile(ex);
+                            process.echoTips("default ignore pattern: " +  excluePattern.pattern()  + "\n");
+                        } else {
+                            excluePattern = null;
+                        }
+                        final String  methoPatternStr = getMethodPattern();
+                        final Pattern methodFilter;
+                        if ("=".equals(methoPatternStr) || "*".equals(methoPatternStr)) {
+                             methodFilter = null;
+                        } else {
+                            methodFilter = Pattern.compile(methoPatternStr);
+                        }
+                        final Set<String> ignoredMethod = new HashSet<String>();
+                        while(matcher.find()) {
+                            final String cls = matcher.group(1);
+                            if (excluePattern != null && excluePattern.matcher(cls).find()
+                                || excludeMatcher != null && excludeMatcher.matching(cls)) {
+                                process.echoTips("ignored class: " +  cls  + "\n");
+                                continue;
+                            }
+                            classList.add(cls);
+                            final String method = matcher.group(2);
+                            if (methodFilter == null || methodFilter.matcher(method).find()) {
+                                methodList.add(method);
+                            } else {
+                                ignoredMethod.add(method);
+                            }
+                        }
+                        process.echoTips("ignored methods: " +  ignoredMethod  + "\n");
+                        process.echoTips("found classList: " +  classList  + "\n");
+                        process.echoTips("found methodList: " +  methodList + "\n");
+                        classNameMatcher = new ListMatcher(classList);
+                        methodNameMatcher = new ListMatcher(methodList);
+                    } catch (final IOException ex) {
+                        throw new IllegalStateException(ex);
+                    }
+            }    
+        }
         super.initOnAdviceListener(process, listener);
     }
 }
