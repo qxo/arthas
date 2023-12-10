@@ -51,6 +51,7 @@ import java.util.regex.Pattern;
         "  trace demo.MathGame run --skipJDKMethod false\n" +
         "  trace javax.servlet.Filter * --exclude-class-pattern com.demo.TestFilter\n" +
         "  trace OuterClass$InnerClass *\n" +
+        "  trace = = -l xxx\n" +
         Constants.WIKI + Constants.WIKI_HOME + "trace")
 //@formatter:on
 public class TraceCommand extends AbstractMethodBasedCommand {
@@ -62,6 +63,8 @@ public class TraceCommand extends AbstractMethodBasedCommand {
     private boolean skipJDKTrace;
 
     private String resultFilter;
+
+    private boolean ignoreByPassMethod = true;
 
     @Argument(argName = "class-pattern", index = 0)
     @Description("Class name pattern, use either '.' or '/' as separator")
@@ -298,6 +301,23 @@ public class TraceCommand extends AbstractMethodBasedCommand {
     @Description("Result node filter, number(cost) or regexp （class/method). ie: 0.1 = cost > 0.1 ms will be hide")
     public void setResultFilter(String resultFilter) {
         this.resultFilter = resultFilter;
+    }
+
+
+    /**
+     * @return boolean return the ignoreByPassMethod
+     */
+    public boolean isIgnoreByPassMethod() {
+        return ignoreByPassMethod;
+    }
+
+    /**
+     * @param ignoreByPassMethod the ignoreByPassMethod to set
+     */
+    @Option(shortName = "i", longName = "ignoreByPassMethod")
+    @Description("Result node filter, true for ignore by pass method.")
+    public void setIgnoreByPassMethod(final boolean ignoreByPassMethod) {
+        this.ignoreByPassMethod = ignoreByPassMethod;
     }
 
 }

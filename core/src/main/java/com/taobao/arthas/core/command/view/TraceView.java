@@ -10,6 +10,7 @@ import com.taobao.arthas.core.util.DateUtils;
 import com.taobao.arthas.core.util.StringUtils;
 import com.taobao.arthas.core.view.Ansi;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -22,6 +23,9 @@ import static java.lang.String.format;
 public class TraceView extends ResultView<TraceModel> {
     private static final String STEP_FIRST_CHAR = "`---";
     private static final String STEP_NORMAL_CHAR = "+---";
+    private static final String STEP_SKIP_BYPASS_FIRST_CHAR = "+...";
+    private static final String STEP_SKIP_BYPASS_END_CHAR = "`...";
+    
     private static final String STEP_HAS_BOARD = "|   ";
     private static final String STEP_EMPTY_BOARD = "    ";
     private static final String TIME_UNIT = "ms";
@@ -67,15 +71,18 @@ public class TraceView extends ResultView<TraceModel> {
           }
         }
         hideCount = 0;
-        process.write(drawTree(result.getRoot(), filter)).write("\n");  
+
+        final boolean ignoreByPassMethod = result.isIgnoreByPassMethod();
+        process.write(drawTree(result.getRoot(), filter, ignoreByPassMethod)).write("\n");  
         result.setMaxCostNode(maxCostNode);
-        if (resultFilter != null) {
-            process.echoTips("hideCount: " + hideCount + " resultFilter:" + resultFilter + "\n");
+        if (resultFilter != null  || ignoreByPassMethod ) {
+            process.echoTips("hideCount: " + hideCount + " resultFilter: " + resultFilter 
+                + " ignoreByPassMethod: " + ignoreByPassMethod + "\n");
         }
     }
 
     private int hideCount = 0;
-    public String drawTree(TraceNode root, final DisplayFilter filter) {
+    public String drawTree(TraceNode root, final DisplayFilter filter, final boolean ignoreByPassMethod) {
 
         maxCostNode = findMaxCostNode(root, null);
 
@@ -84,15 +91,16 @@ public class TraceView extends ResultView<TraceModel> {
         final Ansi highlighted = Ansi.ansi().fg(Ansi.Color.RED);
         final Ansi highlightedChild = Ansi.ansi().fg(Ansi.Color.YELLOW);
 
-        recursive(0, true, "", root, new Callback() {
+        recursive(0, true, "", root, filter, ignoreByPassMethod, true, 0, new Callback() {
 
             @Override
-            public void callback(int deep, boolean isLast, String prefix, TraceNode node) {
-                if (filter != null && filter.notShow(node)) {
-                    hideCount ++;
-                    return;
+            public void callback(int deep, boolean isLast, String prefix, TraceNode node, final int byPassLevel) {
+                treeSB.append(prefix);
+                if (byPassLevel > 0) {
+                    treeSB.append(isLast ? STEP_SKIP_BYPASS_END_CHAR : STEP_SKIP_BYPASS_FIRST_CHAR);
+                } else {
+                    treeSB.append(isLast ? STEP_FIRST_CHAR : STEP_NORMAL_CHAR);
                 }
-                treeSB.append(prefix).append(isLast ? STEP_FIRST_CHAR : STEP_NORMAL_CHAR);
                 renderNode(treeSB, node, highlighted, highlightedChild);
                 if (!StringUtils.isBlank(node.getMark())) {
                     treeSB.append(" [").append(node.getMark()).append(node.marks() > 1 ? "," + node.marks() : "").append("]");
@@ -192,13 +200,62 @@ public class TraceView extends ResultView<TraceModel> {
     /**
      * 递归遍历
      */
-    private void recursive(int deep, boolean isLast, String prefix, TraceNode node, Callback callback) {
-        callback.callback(deep, isLast, prefix, node);
-        if (!isLeaf(node)) {
-            List<TraceNode> children = node.getChildren();
-            if (children == null) {
+    private void recursive(int deep, boolean isLast, String prefix, TraceNode node,
+        final DisplayFilter filter, final boolean ignoreByPassMethod, final boolean showCurrentNode, 
+        final int byPassLevel, Callback callback) {
+        if (filter != null && filter.notShow(node)) {
+            hideCount++;
+            return;
+        }
+        final List<TraceNode> childrenOrigin = isLeaf(node) ? null : node.getChildren();
+        final List<TraceNode> children;
+        int throwNodeCount = 0;
+        if (ignoreByPassMethod && childrenOrigin != null) {
+            children = new ArrayList<TraceNode>();
+            for (final TraceNode child : childrenOrigin) {
+                if (filter != null && filter.notShow(child)) {
+                    continue;
+                }
+                children.add(child);
+                if (child instanceof ThrowNode) {
+                    throwNodeCount++;
+                }
+            }
+        } else {
+            children = childrenOrigin;
+        }
+        boolean showNode  = ignoreByPassMethod ? isLeaf(node) : true;
+        final boolean byPassOn = ignoreByPassMethod && children != null &&
+            (throwNodeCount == 1 ? children.size() == 2 : children.size() == 1);
+        if (!showNode) {
+            showNode = byPassOn ? showCurrentNode : true;
+        } else {
+            hideCount ++;
+        }
+        if (showNode) {
+            callback.callback(deep, isLast, prefix, node, byPassLevel);
+        }
+        if (byPassOn){
+            final TraceNode child = children.get(0);
+            if (!isLeaf(child) && child instanceof MethodNode){
+                //final String mark = child.getMark();
+                //child.setMark(mark == null ? ".." : mark + " ..");
+                final String currentPrefix = !showNode ? prefix : isLast ? prefix + STEP_EMPTY_BOARD : prefix + STEP_HAS_BOARD;
+                recursive(
+                        showNode ? deep + 1 : deep,
+                    true,
+                        currentPrefix,
+                        child,
+                        filter,
+                        ignoreByPassMethod,
+                        false,
+                        showNode ? byPassLevel : byPassLevel + 1,
+                        callback
+                );
                 return;
             }
+        }
+        if (children != null && !children.isEmpty()) {
             final int size = children.size();
             for (int index = 0; index < size; index++) {
                 final boolean isLastFlag = index == size - 1;
@@ -208,6 +265,10 @@ public class TraceView extends ResultView<TraceModel> {
                         isLastFlag,
                         currentPrefix,
                         children.get(index),
+                        filter,
+                        ignoreByPassMethod,
+                        byPassOn ? false : true,
+                        showNode ? 0 : byPassLevel + 1,
                         callback
                 );
             }
@@ -263,7 +324,7 @@ public class TraceView extends ResultView<TraceModel> {
      */
     private interface Callback {
 
-        void callback(int deep, boolean isLast, String prefix, TraceNode node);
+        void callback(int deep, boolean isLast, String prefix, TraceNode node, int byPassLevel);
 
     }
 }

@@ -101,6 +101,7 @@ public class AbstractTraceAdviceListener extends AdviceListenerAdapter {
                     // TODO: concurrency issues for process.write
                     final TraceModel model = traceEntity.getModel();
                     model.setResultFilter(command.getResultFilter());
+                    model.setIgnoreByPassMethod(command.isIgnoreByPassMethod());
                     process.appendResult(model);
                     maxCostNode = model.getMaxCostNode();
                     if(maxCostNode!= null) {

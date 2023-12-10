@@ -12,6 +12,8 @@ public class TraceModel extends ResultModel {
 
     private String resultFilter;
 
+    private boolean ignoreByPassMethod;
+
     public TraceModel() {
     }
 
@@ -61,6 +63,21 @@ public class TraceModel extends ResultModel {
      */
     public void setResultFilter(String displayFilter) {
         this.resultFilter = displayFilter;
+    }
+
+
+    /**
+     * @return boolean return the ignoreByPassMethod
+     */
+    public boolean isIgnoreByPassMethod() {
+        return ignoreByPassMethod;
+    }
+
+    /**
+     * @param ignoreByPassMethod the ignoreByPassMethod to set
+     */
+    public void setIgnoreByPassMethod(boolean ignoreByPassMethod) {
+        this.ignoreByPassMethod = ignoreByPassMethod;
     }
 
 }
