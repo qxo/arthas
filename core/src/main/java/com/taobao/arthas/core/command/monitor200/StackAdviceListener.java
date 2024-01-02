@@ -22,10 +22,13 @@ public class StackAdviceListener extends AdviceListenerAdapter {
     private final ThreadLocalWatch threadLocalWatch = new ThreadLocalWatch();
     private StackCommand command;
     private CommandProcess process;
+    private final int stacktraceMax;
 
-    public StackAdviceListener(StackCommand command, CommandProcess process, boolean verbose) {
+    public StackAdviceListener(StackCommand command, CommandProcess process, boolean verbose,
+        final int stacktraceMax) {
         this.command = command;
         this.process = process;
+        this.stacktraceMax = stacktraceMax;
         super.setVerbose(verbose);
     }
 
@@ -61,6 +64,7 @@ public class StackAdviceListener extends AdviceListenerAdapter {
             if (conditionResult) {
                 // TODO: concurrency issues for process.write
                 StackModel stackModel = ThreadUtil.getThreadStackModel(advice.getLoader(), Thread.currentThread());
+                stackModel.setStacktraceMax(stacktraceMax);
                 stackModel.setTs(new Date());
                 process.appendResult(stackModel);
                 process.times().incrementAndGet();

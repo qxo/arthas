@@ -20,6 +20,8 @@ public class StackModel extends ResultModel {
     private String classloader;
     private StackTraceElement[] stackTrace;
 
+    private int stacktraceMax;
+
     @Override
     public String getType() {
         return "stack";
@@ -103,5 +105,19 @@ public class StackModel extends ResultModel {
 
     public void setStackTrace(StackTraceElement[] stackTrace) {
         this.stackTrace = stackTrace;
+    }
+
+    /**
+     * @return int return the stacktraceMax
+     */
+    public int getStacktraceMax() {
+        return stacktraceMax;
+    }
+
+    /**
+     * @param stacktraceMax the stacktraceMax to set
+     */
+    public void setStacktraceMax(final int stacktraceMax) {
+        this.stacktraceMax = stacktraceMax;
     }
 }

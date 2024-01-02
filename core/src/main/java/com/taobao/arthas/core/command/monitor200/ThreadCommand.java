@@ -8,6 +8,8 @@ import com.taobao.arthas.core.command.model.ThreadVO;
 import com.taobao.arthas.core.shell.command.AnnotatedCommand;
 import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.shell.command.ExitStatus;
+import com.taobao.arthas.core.shell.handlers.command.CommandInterruptHandler;
+import com.taobao.arthas.core.shell.handlers.shell.QExitHandler;
 import com.taobao.arthas.core.util.ArrayUtils;
 import com.taobao.arthas.core.util.CommandUtils;
 import com.taobao.arthas.core.util.StringUtils;
@@ -66,6 +68,8 @@ public class ThreadCommand extends AnnotatedCommand {
 
     private int stacktraceMax;
 
+    private int loopCount;
+
     static {
         states = new HashSet<String>(State.values().length);
         for (State state : State.values()) {
@@ -83,6 +87,12 @@ public class ThreadCommand extends AnnotatedCommand {
     @Description("limit stacktrace max number")
     public void setStacktraceMax(int stacktraceMax) {
         this.stacktraceMax = stacktraceMax;
+    }
+
+    @Option(longName = "loop-count", shortName = "loop")
+    @Description("loop count >=0 and <=20")
+    public void setLoopCount(final int loopCount) {
+        this.loopCount = loopCount;
     }
 
     @Option(longName = "hide-internal", flag = true)
@@ -145,6 +155,25 @@ public class ThreadCommand extends AnnotatedCommand {
 
     @Override
     public void process(CommandProcess process) {
+        ExitStatus exitStatus = doProcess(process);
+        if (loopCount > 1) {
+            if (this.sampleInterval < 1000) {
+                this.sampleInterval = 2000;
+            }
+            // ctrl-C support
+            process.interruptHandler(new CommandInterruptHandler(process));
+            // q exit support
+            process.stdinHandler(new QExitHandler(process));
+            do {
+                process.echoTips("interval:" + sampleInterval + " loopRemain:"+ loopCount + " " 
+                + com.taobao.arthas.core.util.Constants.Q_OR_CTRL_C_ABORT_MSG + "\n");
+                exitStatus = doProcess(process);
+            } while(--loopCount > 1);
+        }
+        CommandUtils.end(process, exitStatus);
+    }
+
+    private ExitStatus doProcess(CommandProcess process) {
         ExitStatus exitStatus;
         if (id > 0) {
             exitStatus = processThread(process);
@@ -155,7 +184,7 @@ public class ThreadCommand extends AnnotatedCommand {
         } else {
             exitStatus = processAllThreads(process);
         }
-        CommandUtils.end(process, exitStatus);
+        return exitStatus;
     }
 
     private ExitStatus processAllThreads(CommandProcess process) {
@@ -197,10 +226,11 @@ public class ThreadCommand extends AnnotatedCommand {
         threadSampler.sample(resultThreads);
         threadSampler.pause(sampleInterval);
         List<ThreadVO> threadStats = threadSampler.sample(resultThreads);
-
+        filterThreadByPattern(threadStats, namePattern);
         final ThreadModel model = new ThreadModel(threadStats, stateCountMap, all);
         model.setStacktraceMax(stacktraceMax);
         process.appendResult(model);
+
         return ExitStatus.success();
     }
 

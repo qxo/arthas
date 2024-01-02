@@ -372,7 +372,7 @@ abstract public class ThreadUtil {
                 }
             }
 
-            if (stacktraceMax > 0 && i > stacktraceMax) {
+            if (stacktraceMax > 0 && i >= stacktraceMax - 1) {
                 break;
             }
         }

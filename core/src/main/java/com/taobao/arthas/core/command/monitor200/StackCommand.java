@@ -35,6 +35,13 @@ public class StackCommand extends AbstractMethodBasedCommand {
     private String conditionExpress;
     private boolean isRegEx = false;
     private int numberOfLimit = 100;
+    private int stacktraceMax;
+
+    @Option(longName = "stacktrace-max", shortName = "smax")
+    @Description("limit stacktrace max number")
+    public void setStacktraceMax(int stacktraceMax) {
+        this.stacktraceMax = stacktraceMax;
+    }
 
     @Argument(index = 0, argName = "class-pattern")
     @Description("Path and classname of Pattern Matching")
@@ -112,7 +119,7 @@ public class StackCommand extends AbstractMethodBasedCommand {
 
     @Override
     protected AdviceListener getAdviceListener(CommandProcess process) {
-        return new StackAdviceListener(this, process, GlobalOptions.verbose || this.verbose);
+        return new StackAdviceListener(this, process, GlobalOptions.verbose || this.verbose, stacktraceMax);
     }
 
 }

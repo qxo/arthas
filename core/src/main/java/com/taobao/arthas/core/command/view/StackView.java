@@ -23,6 +23,7 @@ public class StackView extends ResultView<StackModel> {
         sb.append(locationString).append("\n");
 
         int skip = 1;
+        final int stacktraceMax = result.getStacktraceMax();
         for (int index = skip; index < stackTraceElements.length; index++) {
             StackTraceElement ste = stackTraceElements[index];
             sb.append("        at ")
@@ -34,6 +35,10 @@ public class StackView extends ResultView<StackModel> {
                     .append(":")
                     .append(ste.getLineNumber())
                     .append(")\n");
+            if (stacktraceMax > 0 && index >= stacktraceMax) {
+                sb.append("        ....");
+                break;
+            }
         }
         process.write("ts=" + DateUtils.formatDate(result.getTs()) + ";" + sb.toString() + "\n");
     }
