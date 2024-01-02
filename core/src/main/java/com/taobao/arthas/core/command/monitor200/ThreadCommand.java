@@ -64,6 +64,8 @@ public class ThreadCommand extends AnnotatedCommand {
 
     private boolean hideInternalThreads;
 
+    private int stacktraceMax;
+
     static {
         states = new HashSet<String>(State.values().length);
         for (State state : State.values()) {
@@ -77,6 +79,11 @@ public class ThreadCommand extends AnnotatedCommand {
         this.id = id;
     }
 
+    @Option(longName = "stacktrace-max", shortName = "smax")
+    @Description("limit stacktrace max number")
+    public void setStacktraceMax(int stacktraceMax) {
+        this.stacktraceMax = stacktraceMax;
+    }
 
     @Option(longName = "hide-internal", flag = true)
     @Description("Hide internal threads")
@@ -191,7 +198,9 @@ public class ThreadCommand extends AnnotatedCommand {
         threadSampler.pause(sampleInterval);
         List<ThreadVO> threadStats = threadSampler.sample(resultThreads);
 
-        process.appendResult(new ThreadModel(threadStats, stateCountMap, all));
+        final ThreadModel model = new ThreadModel(threadStats, stateCountMap, all);
+        model.setStacktraceMax(stacktraceMax);
+        process.appendResult(model);
         return ExitStatus.success();
     }
 
@@ -211,7 +220,9 @@ public class ThreadCommand extends AnnotatedCommand {
         if (blockingLockInfo.getThreadInfo() == null) {
             return ExitStatus.failure(1, "No most blocking thread found!");
         }
-        process.appendResult(new ThreadModel(blockingLockInfo));
+        final ThreadModel model = new ThreadModel(blockingLockInfo);
+        model.setStacktraceMax(stacktraceMax);
+        process.appendResult(model);
         return ExitStatus.success();
     }
 
@@ -250,7 +261,9 @@ public class ThreadCommand extends AnnotatedCommand {
             BusyThreadInfo busyThread = new BusyThreadInfo(thread, threadInfo);
             busyThreadInfos.add(busyThread);
         }
-        process.appendResult(new ThreadModel(busyThreadInfos));
+        final ThreadModel model = new ThreadModel(busyThreadInfos);
+        model.setStacktraceMax(stacktraceMax);
+        process.appendResult(model);
         return ExitStatus.success();
     }
 
@@ -270,7 +283,9 @@ public class ThreadCommand extends AnnotatedCommand {
             return ExitStatus.failure(1, "thread do not exist! id: " + id);
         }
 
-        process.appendResult(new ThreadModel(threadInfos[0]));
+        final ThreadModel model = new ThreadModel(threadInfos[0]);
+        model.setStacktraceMax(stacktraceMax);
+        process.appendResult(model);
         return ExitStatus.success();
     }
 }

@@ -172,9 +172,12 @@ abstract public class ThreadUtil {
         return blockingLockInfo;
     }
 
-
     public static String getFullStacktrace(ThreadInfo threadInfo) {
         return getFullStacktrace(threadInfo, -1, -1, -1, 0, 0);
+    }
+
+    public static String getFullStacktrace(final ThreadInfo threadInfo, final int stacktraceMax) {
+        return getFullStacktrace(threadInfo, -1, -1, -1, 0, 0, stacktraceMax);
     }
 
     public static String getFullStacktrace(BlockingLockInfo blockingLockInfo) {
@@ -182,6 +185,10 @@ abstract public class ThreadUtil {
                 blockingLockInfo.getBlockingThreadCount());
     }
 
+    public static String getFullStacktrace(final BlockingLockInfo blockingLockInfo, final int stacktraceMax) {
+        return getFullStacktrace(blockingLockInfo.getThreadInfo(), -1, -1, -1, blockingLockInfo.getLockIdentityHashCode(),
+                blockingLockInfo.getBlockingThreadCount(), stacktraceMax);
+    }
 
     /**
      * 完全从 ThreadInfo 中 copy 过来
@@ -193,6 +200,11 @@ abstract public class ThreadUtil {
      */
     public static String getFullStacktrace(ThreadInfo threadInfo, double cpuUsage, long deltaTime, long time, int lockIdentityHashCode,
                                            int blockingThreadCount) {
+        return getFullStacktrace(threadInfo, cpuUsage, deltaTime, time, lockIdentityHashCode, blockingThreadCount, 0);
+    }
+
+    public static String getFullStacktrace(ThreadInfo threadInfo, double cpuUsage, long deltaTime, long time,
+            int lockIdentityHashCode, int blockingThreadCount, final int stacktraceMax) {
         StringBuilder sb = new StringBuilder("\"" + threadInfo.getThreadName() + "\"" + " Id="
                 + threadInfo.getThreadId());
 
@@ -256,6 +268,9 @@ abstract public class ThreadUtil {
                 }
             }
             ++i;
+            if (stacktraceMax > 0 && i >= stacktraceMax) {
+                break;
+            }
         }
         if (i < threadInfo.getStackTrace().length) {
             sb.append("\t...");
@@ -279,7 +294,11 @@ abstract public class ThreadUtil {
         return sb.toString().replace("\t", "    ");
     }
 
-    public static String getFullStacktrace(BusyThreadInfo threadInfo, int lockIdentityHashCode, int blockingThreadCount) {
+     public static String getFullStacktrace(BusyThreadInfo threadInfo, int lockIdentityHashCode, int blockingThreadCount) {
+        return getFullStacktrace(threadInfo, lockIdentityHashCode, blockingThreadCount, 0);
+    }
+
+    public static String getFullStacktrace(BusyThreadInfo threadInfo, int lockIdentityHashCode, int blockingThreadCount, int stacktraceMax) {
         StringBuilder sb = new StringBuilder("\"" + threadInfo.getName() + "\"");
         if (threadInfo.getId() > 0) {
             sb.append(" Id=").append(threadInfo.getId());
@@ -351,6 +370,10 @@ abstract public class ThreadUtil {
                     }
                     sb.append('\n');
                 }
+            }
+
+            if (stacktraceMax > 0 && i > stacktraceMax) {
+                break;
             }
         }
         if (i < threadInfo.getStackTrace().length) {
