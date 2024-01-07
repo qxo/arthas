@@ -95,7 +95,7 @@ public class ThreadCommand extends AnnotatedCommand {
         this.loopCount = loopCount;
     }
 
-    @Option(longName = "hide-internal", flag = true)
+    @Option(longName = "hide-internal",  shortName = "hi", flag = true)
     @Description("Hide internal threads")
     public void setHideInternalThreads(final boolean hideInternalThreads) {
         this.hideInternalThreads = hideInternalThreads;
