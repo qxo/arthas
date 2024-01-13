@@ -165,8 +165,8 @@
             <artifactId>cli</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.taobao.text</groupId>
-            <artifactId>text-ui</artifactId>
+            <groupId>io.github.qxo</groupId>
+            <artifactId>alibaba-text-ui</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fifesoft</groupId>

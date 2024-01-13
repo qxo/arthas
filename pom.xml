@@ -142,9 +142,9 @@
                 <version>1.2.83_noneautotype</version>
             </dependency>
             <dependency>
-                <groupId>com.taobao.text</groupId>
-                <artifactId>text-ui</artifactId>
-                <version>0.0.3</version>
+                <groupId>io.github.qxo</groupId>
+                <artifactId>alibaba-text-ui</artifactId>
+                <version>0.0.4-20240111</version>
             </dependency>
             <dependency>
                 <groupId>com.fifesoft</groupId>
