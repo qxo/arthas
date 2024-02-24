@@ -37,17 +37,12 @@ public abstract class AbstractMethodBasedCommand extends EnhancerCommand {
     @Override
     protected void initOnAdviceListener(final CommandProcess process, final AdviceListener listener) {
         if (isSpecialPattern(methodPattern)) { //smart way
-          final Pattern smartPattern = Pattern.compile("([.][A-Z][^.]*)([.: ]+)([a-z][^. ]*)$");
-          final Matcher matcher = smartPattern.matcher(classPattern);
+          final Matcher matcher = toSmartMatcher(classPattern);
           if (matcher.find()) {
               methodPattern = matcher.group(3);
               classPattern = matcher.replaceAll("$1");
               process.echoTips("smart way input ==> " + classPattern + " " + methodPattern + "\n");
           }
         }
-    }
-
-    protected boolean isSpecialPattern(final String pattern) {
-        return "=".equals(pattern) || "~".equals(pattern) || ".".equals(pattern);
     }
 }

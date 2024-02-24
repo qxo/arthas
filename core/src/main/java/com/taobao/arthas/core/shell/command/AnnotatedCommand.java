@@ -5,6 +5,8 @@ import com.taobao.arthas.core.shell.cli.CompletionUtils;
 import com.taobao.middleware.cli.CLI;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The base command class that Java annotated command should extend.
@@ -44,5 +46,13 @@ public abstract class AnnotatedCommand {
         CompletionUtils.complete(completion, this.getClass());
     }
 
+    protected boolean isSpecialPattern(final String pattern) {
+        return "=".equals(pattern) || "~".equals(pattern) || ".".equals(pattern);
+    }
+
+    protected static Matcher toSmartMatcher(final String classPattern) {
+        final Pattern smartPattern = Pattern.compile("([.][A-Z][^.]*)([.: ]+)([a-z][^. ]*)$");
+        return smartPattern.matcher(classPattern);
+    }
 }
 

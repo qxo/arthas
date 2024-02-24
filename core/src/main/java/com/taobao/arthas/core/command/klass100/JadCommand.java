@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.Collection;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -140,7 +141,13 @@ public class JadCommand extends AnnotatedCommand {
                 return;
             }
         }
-        
+        if (methodName != null && isSpecialPattern(methodName)) {
+            final Matcher matcher = toSmartMatcher(this.classPattern);
+            if (matcher.find()) {
+                methodName = matcher.group(3);
+                classPattern = matcher.replaceAll("$1");
+            }
+        }
         Set<Class<?>> matchedClasses = SearchUtils.searchClassOnly(inst, classPattern, isRegEx, code);
 
         try {
