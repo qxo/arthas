@@ -11,6 +11,8 @@ import com.taobao.arthas.core.shell.command.CommandProcess;
 import com.taobao.arthas.core.util.LogUtil;
 import com.taobao.arthas.core.util.ThreadLocalWatch;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * @author ralf0131 2017-01-06 16:02.
  */
@@ -19,6 +21,7 @@ public class AbstractTraceAdviceListener extends AdviceListenerAdapter {
     protected final ThreadLocalWatch threadLocalWatch = new ThreadLocalWatch();
     protected TraceCommand command;
     protected CommandProcess process;
+    private final AtomicBoolean processAborted = new AtomicBoolean(false);
 
     private transient MethodNode maxCostNode;
 
@@ -112,7 +115,6 @@ public class AbstractTraceAdviceListener extends AdviceListenerAdapter {
                     }
                     // 是否到达数量限制
                     if (isLimitExceeded(command.getNumberOfLimit(), process.times().get())) {
-                        // TODO: concurrency issue to abort process
                         abortProcess(process, command.getNumberOfLimit());
                     }
                 }
@@ -128,5 +130,13 @@ public class AbstractTraceAdviceListener extends AdviceListenerAdapter {
 
     public MethodNode getMaxCostNode (){
         return maxCostNode;
+    }
+
+    @Override
+    protected void abortProcess(CommandProcess process, int limit) {
+        // Only proceed if this thread is the first one to set the flag to true
+        if (processAborted.compareAndSet(false, true)) {
+            super.abortProcess(process, limit);
+        }
     }
 }

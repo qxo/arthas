@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [8, 11]
+        java: [8, 11, 17, 19]
     steps:
       - uses: actions/checkout@v3
       - name: Setup java
@@ -17,7 +17,7 @@ jobs:
           distribution: 'zulu'
           cache: 'maven'
       - name: Build with Maven
-        run: mvn clean package -P full
+        run: mvn clean install -P full
 
   windows_build:
     runs-on: windows-2019
@@ -33,13 +33,16 @@ jobs:
           distribution: 'zulu'
           cache: 'maven'
       - name: Build with Maven
-        run: mvn clean package -P full
+        run: mvn clean install -P full
 
   macos_build:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         java: [8, 11]
+        os:
+          - macos-latest
+          - macos-14
     steps:
       - uses: actions/checkout@v3
       - name: Setup java
@@ -49,4 +52,4 @@ jobs:
           distribution: 'zulu'
           cache: 'maven'
       - name: Build with Maven
-        run: mvn clean package -P full
+        run: mvn clean install -P full
